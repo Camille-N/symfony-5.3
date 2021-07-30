@@ -1,0 +1,23 @@
+{% extends 'base.html.twig' %}
+
+{% block title%}
+    Factures
+{% endblock %}
+
+{% block body %}
+    <table>
+        <tr>
+            <th>N°</th>
+            <th>Date</th>
+        </tr>
+
+        {% for invoice in invoices %}
+
+        <tr>
+            <td><a href="{{ path('invoice_show', {invoice: invoice.id}) }}">{{ invoice.id}}</a></td>
+            <td><a href="{{ path('invoice_show', {invoice: invoice.id}) }}">{{ invoice.date | date('d-m-Y') }}</a></td>
+        </tr>
+        {% endfor %}
+    </table>
+
+{% endblock %}

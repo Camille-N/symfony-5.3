@@ -5,8 +5,12 @@ namespace App\Controller;
 use App\Entity\Invoice;
 use App\Entity\InvoiceLine;
 use App\Repository\AddressRepository;
+use App\Repository\InvoiceRepository;
+use Knp\Snappy\Pdf;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Form\Exception\AccessException;
+use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -78,6 +82,17 @@ class InvoiceController extends AbstractController
     }
 
     /**
+     * @return Response
+     * @Route("/list", name="_list")
+     */
+    public function listByUser(InvoiceRepository $invoiceRepository)
+    {
+        return $this->render('invoice/list.html.twig', [
+            'invoices' => $invoiceRepository->findBy(['user' => $this->getUser()])
+        ]);
+    }
+
+    /**
      * @param Invoice $invoice
      * @return Response
      * @Route("/{invoice}", name="_show")
@@ -87,5 +102,27 @@ class InvoiceController extends AbstractController
         return $this->render('invoice/index.html.twig', [
             'invoice' => $invoice
         ]);
+    }
+
+    /**
+     * @Route("/{invoice}/download", name="_download")
+     */
+    public function download(Invoice $invoice, Pdf $pdf, Filesystem $filesystem)
+    {
+
+        if(!$filesystem->exists($_ENV['INVOICES_FOLDER'] . 'Facture ' . $invoice->getId() . '.pdf')) {
+            $content = $pdf->getOutputFromHtml(
+                $this->renderView('invoice/index.pdf.html.twig', [
+                'invoice' => $invoice
+            ]));
+            $filesystem->dumpFile(
+                $_ENV['INVOICES_FOLDER'] . 'Facture ' . $invoice->getId() . '.pdf',
+                $content
+            );
+        }
+
+        $file = new File($_ENV['INVOICES_FOLDER'] . 'Facture ' . $invoice->getId() . '.pdf');
+        return $this->file($file);
+
     }
 }
